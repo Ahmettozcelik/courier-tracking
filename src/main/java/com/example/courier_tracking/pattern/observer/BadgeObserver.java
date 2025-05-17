@@ -1,4 +1,4 @@
-package com.example.courier_tracking.pattern;
+package com.example.courier_tracking.pattern.observer;
 
 import com.example.courier_tracking.entity.StoreVisit;
 import com.example.courier_tracking.repository.StoreVisitRepository;
@@ -8,6 +8,9 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.example.courier_tracking.util.DateTimeUtil.*;
+
 
 public class BadgeObserver implements VisitObserver {
 
@@ -26,7 +29,7 @@ public class BadgeObserver implements VisitObserver {
                 .collect(Collectors.toSet());
 
         if (distinctStores.size() == 3) {
-            logger.info("🏅 Courier {} visited 3 different stores — Achievement unlocked!", courierId);
+            logger.info("🏅 Courier {} visited 3 different stores — Achievement unlocked as of {}!", courierId, format(time));
         }
     }
 }

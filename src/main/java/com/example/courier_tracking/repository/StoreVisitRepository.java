@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface StoreVisitRepository extends JpaRepository<StoreVisit, Long> {
     List<StoreVisit> findByCourierIdOrderByEntryTimeAsc(String courierId);
+    List<StoreVisit> findByCourierIdOrderByEntryTimeDesc(String courierId);
 }

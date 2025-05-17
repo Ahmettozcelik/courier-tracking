@@ -4,8 +4,8 @@ import com.example.courier_tracking.entity.CourierLocation;
 import com.example.courier_tracking.entity.Store;
 import com.example.courier_tracking.entity.StoreVisit;
 import com.example.courier_tracking.entity.dto.VisitResponse;
-import com.example.courier_tracking.pattern.BadgeObserver;
-import com.example.courier_tracking.pattern.VisitObserver;
+import com.example.courier_tracking.pattern.observer.BadgeObserver;
+import com.example.courier_tracking.pattern.observer.VisitObserver;
 import com.example.courier_tracking.repository.CourierLocationRepository;
 import com.example.courier_tracking.repository.StoreVisitRepository;
 import com.example.courier_tracking.util.Haversine;
@@ -18,6 +18,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import static com.example.courier_tracking.util.DateTimeUtil.*;
+import static com.example.courier_tracking.util.DateTimeUtil.format;
+
 @Service
 public class CourierTrackingService {
 
@@ -27,10 +30,8 @@ public class CourierTrackingService {
     private final StoreVisitRepository storeVisitRepository;
     private final CourierLocationRepository locationRepository;
 
-    // Mağaza giriş zamanlarını takip eden Map: courierId → storeName → lastEntryTime
-    private final Map<String, Map<String, LocalDateTime>> lastEntryTime = new HashMap<>();
-
     private final List<VisitObserver> observers = new ArrayList<>();
+    private final Map<String, Map<String, LocalDateTime>> lastEntryTime = new HashMap<>();
 
     public CourierTrackingService(StoreService storeService, StoreVisitRepository storeVisitRepository, CourierLocationRepository locationRepository) {
         this.storeService = storeService;
@@ -40,20 +41,32 @@ public class CourierTrackingService {
 
     @PostConstruct
     public void initObservers() {
-        this.addObserver(new BadgeObserver(storeVisitRepository)); // yeni observer burada
+        this.addObserver(new BadgeObserver(storeVisitRepository));
     }
 
-    /**
-     * Lokasyon güncellemesi alındığında hem kayıt yapar, hem mağaza kontrolü yapar
-     */
+    //Lokasyon güncellemesi alındığında hem kayıt yapar, hem mağaza kontrolü yapar
     public void receiveLocation(CourierLocation location) {
-        locationRepository.save(location); // H2 veritabanına kaydet
-        checkStoreProximity(location);     // Mağaza yakınlığı kontrolü
+        String courierId = location.getCourierId();
+        LocalDateTime timestamp = location.getTimestamp();
+
+        // Zaman kontrolü: son kayıttan eskiyse hiçbir şey yapma
+        LocalDateTime lastVisitTime = storeVisitRepository
+                .findByCourierIdOrderByEntryTimeDesc(courierId).stream()
+                .findFirst()
+                .map(StoreVisit::getEntryTime)
+                .orElse(null);
+
+        if (lastVisitTime != null && timestamp.isBefore(lastVisitTime)) {
+            logger.warn("⛔ Courier {} sent a timestamp earlier than last visit ({} < {}). Location ignored.",
+                    courierId, format(timestamp), format(lastVisitTime));
+            return;
+        }
+
+        // ✅ Geçerli kayıt: hem konumu hem mağaza ziyaretini işle
+        locationRepository.save(location);
+        checkStoreProximity(location);
     }
 
-    /**
-     * Toplam seyahat edilen mesafeyi hesaplar
-     */
     public double getTotalTravelDistance(String courierId) {
         List<CourierLocation> locations = locationRepository.findByCourierIdOrderByTimestampAsc(courierId);
         if (locations.size() < 2) return 0.0;
@@ -67,22 +80,19 @@ public class CourierTrackingService {
         return total;
     }
 
-    /**
-     * Belirli bir kurye için mağaza ziyaretlerini listeler
-     */
+    //Belirli bir kurye için mağaza ziyaretlerini listeler
     public List<VisitResponse> getVisitsByCourierId(String courierId) {
         return storeVisitRepository.findByCourierIdOrderByEntryTimeAsc(courierId).stream()
                 .map(v -> new VisitResponse(v.getStoreName(), v.getEntryTime()))
                 .toList();
     }
 
-
-    /**
-     * Kurye herhangi bir mağazaya 100 metre içinde mi? 1 dakikadan fazla geçti mi? kontrol edilir
-     */
+    //Kurye herhangi bir mağazaya 100 metre içinde mi? 1 dakikadan fazla geçti mi? kontrol edilir
     private void checkStoreProximity(CourierLocation location) {
         String courierId = location.getCourierId();
         LocalDateTime timestamp = location.getTimestamp();
+
+        boolean visitedAnyStore = false;
 
         for (Store store : storeService.getAllStores()) {
             double distance = Haversine.distance(
@@ -92,25 +102,28 @@ public class CourierTrackingService {
 
             if (distance <= 0.1) { // 100 metre
 
-                // Kurye için giriş zamanlarını tutan alt map
                 Map<String, LocalDateTime> lastEntries = lastEntryTime
                         .computeIfAbsent(courierId, k -> new HashMap<>());
 
                 LocalDateTime lastTime = lastEntries.get(store.getName());
 
                 if (lastTime == null || Duration.between(lastTime, timestamp).toMinutes() >= 1) {
-                    // Normal giriş işlemi
                     lastEntries.put(store.getName(), timestamp);
                     StoreVisit visit = new StoreVisit(courierId, store.getName(), timestamp);
                     storeVisitRepository.save(visit);
-                    logger.info("Courier {} entered store {} at {}", courierId, store.getName(), timestamp);
 
+                    logger.info("Courier {} entered store {} at {}", courierId, store.getName(), format(timestamp));
                     notifyObservers(courierId, store.getName(), timestamp);
+                    visitedAnyStore = true;
                 } else {
-                    logger.info("Courier {} already in store {} (last entered at {})", courierId, store.getName(), lastTime);
+                    logger.info("Courier {} already in store {} (last entered at {})",
+                            courierId, store.getName(), format(lastTime));
+                    visitedAnyStore = true;
                 }
-
             }
+        }
+        if (!visitedAnyStore) {
+            logger.info("📍 Courier {} is traveling, not near any store at {}", courierId, format(timestamp));
         }
     }
 
@@ -123,5 +136,4 @@ public class CourierTrackingService {
             observer.onStoreVisit(courierId, storeName, time);
         }
     }
-
 }

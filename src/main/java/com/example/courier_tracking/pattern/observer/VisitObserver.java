@@ -1,4 +1,4 @@
-package com.example.courier_tracking.pattern;
+package com.example.courier_tracking.pattern.observer;
 
 import java.time.LocalDateTime;
 

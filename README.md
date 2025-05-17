@@ -21,33 +21,40 @@ Kullanılan Teknolojiler
 Özellikler
 ----------
 1. Kurye Konum Takibi:
-   - /api/couriers/location → kurye konumu gönderilir
-   - Konum veritabanına kaydedilir
-   - 100 metre yakınlık kontrolü yapılır
+    - /api/couriers/location → kurye konumu gönderilir
+    - Konum veritabanına kaydedilir
+    - Tüm hareketler toplam mesafeye yansıtılır
 
 2. Mağaza Ziyaretleri:
-   - Ziyaretler StoreVisit olarak veritabanına kaydedilir
-   - 1 dakikadan kısa sürede tekrar giriş yapılırsa log basılır
+    - Kurye bir mağazaya 100 metre içinde yaklaşırsa StoreVisit kaydı yapılır
+    - Aynı mağazaya 1 dakika içinde tekrar girerse kayıt oluşmaz, sadece loglanır
+    - 100 metreden uzaksa ziyaret kaydı yapılmaz ama mesafe artar (yeni özellik!)
+    - Ziyaretler `GET /api/couriers/{courierId}/visits` ile görüntülenebilir
 
-3. Toplam Mesafe Hesaplama:
-   - /api/couriers/{courierId}/distance → km cinsinden toplam mesafe
+3. Observer Sistemi:
+    - Observer Pattern ile genişletilebilir yapı
+    - BadgeObserver: Kurye 3 farklı mağaza ziyaret ettiğinde rozet loglanır
 
-4. Ziyaret Listesi:
-   - /api/couriers/{courierId}/visits → tüm mağaza ziyaret geçmişi
+4. Toplam Mesafe Hesaplama:
+    - /api/couriers/{courierId}/distance → km cinsinden toplam mesafe
 
 5. Mağaza Verisi:
-   - stores.json içinden okunarak veritabanına yüklenir (@PostConstruct ile)
+    - stores.json içinden okunarak veritabanına yüklenir (@PostConstruct ile)
+
+6. Zaman ve Veri Güvenliği:
+    - Kurye daha eski zamanlı bir kayıt gönderirse sistem işlemi engeller
+    - Geriye dönük veri kaydı yapılmaz, loglanır
 
 Swagger UI
 ----------
-http://localhost:8080/swagger-ui/index.html
+URL: http://localhost:8080/swagger-ui/index.html
 
 H2 Console
 ----------
 URL: http://localhost:8080/h2-console
 JDBC: jdbc:h2:mem:testdb
 Username: sa
-Password: (boş)
+Password:
 
 Örnek JSON (Konum Gönderimi)
 -----------------------------

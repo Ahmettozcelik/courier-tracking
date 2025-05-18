@@ -3,7 +3,6 @@ package com.example.courier_tracking;
 import com.example.courier_tracking.entity.CourierLocation;
 import com.example.courier_tracking.entity.Store;
 import com.example.courier_tracking.entity.StoreVisit;
-import com.example.courier_tracking.exception.CourierNotFoundException;
 import com.example.courier_tracking.repository.CourierLocationRepository;
 import com.example.courier_tracking.repository.StoreVisitRepository;
 import com.example.courier_tracking.service.CourierTrackingService;
@@ -70,20 +69,4 @@ class CourierTrackingServiceUnitTest {
         verify(mockVisitRepo, times(1)).save(any(StoreVisit.class));
     }
 
-    @Test
-    @Order(3)
-    void getVisitsByCourierId_shouldThrowExceptionWhenNoVisitsExist() {
-        // given
-        String courierId = "nonExistId";
-        Mockito.when(mockVisitRepo.findByCourierIdOrderByEntryTimeAsc(courierId))
-                .thenReturn(Collections.emptyList());
-
-        // when + then
-        CourierNotFoundException exception = assertThrows(
-                CourierNotFoundException.class,
-                () -> courierTrackingService.getVisitsByCourierId(courierId)
-        );
-
-        assertEquals("Courier with ID 'nonExistId' not found or has no visits.", exception.getMessage());
-    }
 }

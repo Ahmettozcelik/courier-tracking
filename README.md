@@ -59,11 +59,26 @@ Password:
 Örnek JSON (Konum Gönderimi)
 -----------------------------
 {
-  "courierId": "1",
-  "lat": 40.9923307,
-  "lng": 29.1244229,
-  "timestamp": "2025-05-15T10:00:00"
+"courierId": "1",
+"lat": 40.9923307,
+"lng": 29.1244229,
+"timestamp": "2025-05-15T10:00:00"
 }
+
+{
+"courierId": "1",
+"lat": 40.986106,
+"lng": 29.1161293,
+"timestamp": "2025-05-15T10:05:00"
+}
+
+{
+"courierId": "1",
+"lat": 41.0066851,
+"lng": 28.6552262,
+"timestamp": "2025-05-15T10:10:00"
+}
+
 
 Unit Testler
 -------------
@@ -80,19 +95,13 @@ Unit Testler
 - Açıklama: Aynı mağazaya 1 dakika içinde tekrar giriş yapılırsa yeni kayıt yapılmaz.
 - Doğrulama: storeVisitRepository.save(...) sadece ilk girişte çağrılır.
 
-3. Ziyareti Olmayan Courier ID için Exception Fırlatılır
----------------------------------------------------------
-- Test: `getVisitsByCourierId_shouldThrowExceptionWhenNoVisitsExist`
-- Açıklama: Hiç ziyareti olmayan bir courierId ile ziyaretler sorgulanırsa CourierNotFoundException fırlatılır.
-- Doğrulama: Exception mesajı kontrol edilir.
-
-4. Servis Bean'i Yüklenebiliyor mu?
+3. Servis Bean'i Yüklenebiliyor mu?
 ------------------------------------
 - Test: `contextLoads`
 - Açıklama: Spring context açıldığında CourierTrackingService null değilse test geçer.
 - Doğrulama: `assertDoesNotThrow()` ile kontrol edilir.
 
-5. Konum Gönderme Hatasız Çalışıyor mu?
+4. Konum Gönderme Hatasız Çalışıyor mu?
 ----------------------------------------
 - Test: `receiveLocation_doesNotFail`
 - Açıklama: Basit bir CourierLocation gönderildiğinde receiveLocation metodu hata fırlatmamalı.

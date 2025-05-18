@@ -3,21 +3,26 @@ package com.example.courier_tracking;
 import com.example.courier_tracking.entity.CourierLocation;
 import com.example.courier_tracking.entity.Store;
 import com.example.courier_tracking.entity.StoreVisit;
+import com.example.courier_tracking.exception.CourierNotFoundException;
 import com.example.courier_tracking.repository.CourierLocationRepository;
 import com.example.courier_tracking.repository.StoreVisitRepository;
 import com.example.courier_tracking.service.CourierTrackingService;
 import com.example.courier_tracking.service.StoreService;
 import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CourierTrackingServiceUnitTest {
 
-    private CourierTrackingService service;
+    private CourierTrackingService courierTrackingService;
     private StoreService mockStoreService;
     private CourierLocationRepository mockLocationRepo;
     private StoreVisitRepository mockVisitRepo;
@@ -28,7 +33,7 @@ class CourierTrackingServiceUnitTest {
         mockLocationRepo = mock(CourierLocationRepository.class);
         mockVisitRepo = mock(StoreVisitRepository.class);
 
-        service = new CourierTrackingService(mockStoreService, mockVisitRepo, mockLocationRepo);
+        courierTrackingService = new CourierTrackingService(mockStoreService, mockVisitRepo, mockLocationRepo);
     }
 
 
@@ -41,7 +46,7 @@ class CourierTrackingServiceUnitTest {
 
         CourierLocation location = new CourierLocation("1", 40.9923307, 29.1244229, LocalDateTime.now());
 
-        service.receiveLocation(location);
+        courierTrackingService.receiveLocation(location);
 
         verify(mockVisitRepo, times(1)).save(any(StoreVisit.class));
     }
@@ -59,9 +64,26 @@ class CourierTrackingServiceUnitTest {
         CourierLocation secondVisit = new CourierLocation("1", 40.9923307, 29.1244229, now.plusSeconds(30));
 
 
-        service.receiveLocation(firstVisit);
-        service.receiveLocation(secondVisit); // already in store
+        courierTrackingService.receiveLocation(firstVisit);
+        courierTrackingService.receiveLocation(secondVisit); // already in store
 
         verify(mockVisitRepo, times(1)).save(any(StoreVisit.class));
+    }
+
+    @Test
+    @Order(3)
+    void getVisitsByCourierId_shouldThrowExceptionWhenNoVisitsExist() {
+        // given
+        String courierId = "nonExistId";
+        Mockito.when(mockVisitRepo.findByCourierIdOrderByEntryTimeAsc(courierId))
+                .thenReturn(Collections.emptyList());
+
+        // when + then
+        CourierNotFoundException exception = assertThrows(
+                CourierNotFoundException.class,
+                () -> courierTrackingService.getVisitsByCourierId(courierId)
+        );
+
+        assertEquals("Courier with ID 'nonExistId' not found or has no visits.", exception.getMessage());
     }
 }

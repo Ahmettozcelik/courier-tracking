@@ -4,6 +4,7 @@ import com.example.courier_tracking.entity.CourierLocation;
 import com.example.courier_tracking.entity.Store;
 import com.example.courier_tracking.entity.StoreVisit;
 import com.example.courier_tracking.entity.dto.VisitResponse;
+import com.example.courier_tracking.exception.CourierNotFoundException;
 import com.example.courier_tracking.pattern.observer.BadgeObserver;
 import com.example.courier_tracking.pattern.observer.VisitObserver;
 import com.example.courier_tracking.repository.CourierLocationRepository;
@@ -69,6 +70,11 @@ public class CourierTrackingService {
 
     public double getTotalTravelDistance(String courierId) {
         List<CourierLocation> locations = locationRepository.findByCourierIdOrderByTimestampAsc(courierId);
+
+        if (locations.isEmpty()) {
+            throw new CourierNotFoundException("Courier with ID '" + courierId + "' not found.");
+        }
+
         if (locations.size() < 2) return 0.0;
 
         double total = 0.0;
@@ -82,10 +88,17 @@ public class CourierTrackingService {
 
     //Belirli bir kurye için mağaza ziyaretlerini listeler
     public List<VisitResponse> getVisitsByCourierId(String courierId) {
-        return storeVisitRepository.findByCourierIdOrderByEntryTimeAsc(courierId).stream()
+        List<StoreVisit> visits = storeVisitRepository.findByCourierIdOrderByEntryTimeAsc(courierId);
+
+        if (visits.isEmpty()) {
+            throw new CourierNotFoundException("Courier with ID '" + courierId + "' not found or has no visits.");
+        }
+
+        return visits.stream()
                 .map(v -> new VisitResponse(v.getStoreName(), v.getEntryTime()))
                 .toList();
     }
+
 
     //Kurye herhangi bir mağazaya 100 metre içinde mi? 1 dakikadan fazla geçti mi? kontrol edilir
     private void checkStoreProximity(CourierLocation location) {

@@ -67,9 +67,34 @@ Password:
 
 Unit Testler
 -------------
-- receiveLocation_shouldSaveLocation
-- getTotalTravelDistance_shouldReturnCorrectValue
-- firstVisit_shouldCreateVisit
-- reentryWithin1Min_shouldNotCreateVisit
-- contextLoads
+
+1. Kurye İlk Ziyaretini Yaptığında StoreVisit Kaydedilir
+---------------------------------------------------------
+- Test: `testCourierFirstVisitShouldBeSaved`
+- Açıklama: Kurye mağazaya ilk kez 100 metre içinde gelirse, StoreVisit kaydı oluşturulur.
+- Doğrulama: storeVisitRepository.save(...) 1 kez çağrılır.
+
+2. Aynı Mağazaya 1 Dakika İçinde Tekrar Girişte Kayıt Yapılmaz
+---------------------------------------------------------------
+- Test: `testCourierSecondVisitWithinOneMinuteShouldNotBeSaved`
+- Açıklama: Aynı mağazaya 1 dakika içinde tekrar giriş yapılırsa yeni kayıt yapılmaz.
+- Doğrulama: storeVisitRepository.save(...) sadece ilk girişte çağrılır.
+
+3. Ziyareti Olmayan Courier ID için Exception Fırlatılır
+---------------------------------------------------------
+- Test: `getVisitsByCourierId_shouldThrowExceptionWhenNoVisitsExist`
+- Açıklama: Hiç ziyareti olmayan bir courierId ile ziyaretler sorgulanırsa CourierNotFoundException fırlatılır.
+- Doğrulama: Exception mesajı kontrol edilir.
+
+4. Servis Bean'i Yüklenebiliyor mu?
+------------------------------------
+- Test: `contextLoads`
+- Açıklama: Spring context açıldığında CourierTrackingService null değilse test geçer.
+- Doğrulama: `assertDoesNotThrow()` ile kontrol edilir.
+
+5. Konum Gönderme Hatasız Çalışıyor mu?
+----------------------------------------
+- Test: `receiveLocation_doesNotFail`
+- Açıklama: Basit bir CourierLocation gönderildiğinde receiveLocation metodu hata fırlatmamalı.
+- Doğrulama: `assertDoesNotThrow()` ile metodun sorunsuz çalıştığı doğrulanır.
 

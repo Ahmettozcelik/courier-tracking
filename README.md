@@ -57,7 +57,7 @@ Username: sa
 Password:
 
 Örnek JSON (Konum Gönderimi)
------------------------------
+----------------------------
 {
 "courierId": "1",
 "lat": 40.9923307,

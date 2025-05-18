@@ -48,14 +48,14 @@ Kullanılan Teknolojiler
 Swagger UI
 ----------
 URL: http://localhost:8080/swagger-ui/index.html
-
+---------------------------------------------------------
 H2 Console
 ----------
 URL: http://localhost:8080/h2-console
 JDBC: jdbc:h2:mem:testdb
 Username: sa
 Password:
-
+---------------------------------------------------------
 Örnek JSON (Konum Gönderimi)
 -----------------------------
 {
